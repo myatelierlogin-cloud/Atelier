@@ -6,7 +6,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "atelier-db"
-database_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+database_id = "979752a6-e820-48be-b75b-35b0274b8c3e"
 
 [[r2_buckets]]
 binding = "BUCKET"
@@ -14,8 +14,8 @@ bucket_name = "atelier-storage"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
-preview_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+id = "b07662fbb08e43188280ae814036739a"
+preview_id = "ab2ac2d30a48467c9c90ee8b23fa2b88"
 
 [vars]
-APP_URL = "http://localhost:8788"
+APP_URL = "https://atelier.pages.dev"
