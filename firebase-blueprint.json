@@ -1,0 +1,170 @@
+{
+  "entities": {
+    "UserPrivate": {
+      "title": "User Private Data",
+      "description": "Private user data including email and role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["shopper", "creator", "brand", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "PublicProfile": {
+      "title": "Public Profile",
+      "description": "Public user data for display",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["shopper", "creator", "brand", "admin"] },
+        "bio": { "type": "string" },
+        "niche": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "theme": { "type": "string" },
+        "customSpaceOrder": { "type": "array", "items": { "type": "string" } },
+        "externalLinks": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "role", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product available on the platform",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "brandId": { "type": "string" },
+        "interactionsCount": { "type": "number" },
+        "purchasesCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "category", "brandId", "interactionsCount", "purchasesCount", "createdAt"]
+    },
+    "Interaction": {
+      "title": "Interaction",
+      "description": "A user's interaction with a product or creator",
+      "type": "object",
+      "properties": {
+        "creatorId": { "type": "string" },
+        "type": { "type": "string", "enum": ["view", "click", "purchase", "profile_view", "space_view", "external_link_click", "social_link_click", "buy_button_click"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "spaceId": { "type": "string" },
+        "markerId": { "type": "string" },
+        "productTitle": { "type": "string" },
+        "platform": { "type": "string" },
+        "url": { "type": "string" },
+        "title": { "type": "string" }
+      },
+      "required": ["creatorId", "type", "timestamp"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A campaign task assigned by a brand to a creator",
+      "type": "object",
+      "properties": {
+        "brandId": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "campaignId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "submitted", "approved", "rejected"] },
+        "contentUrl": { "type": "string" },
+        "scheduledDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["brandId", "creatorId", "campaignId", "title", "deadline", "status", "createdAt"]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "A campaign created by a brand",
+      "type": "object",
+      "properties": {
+        "brandId": { "type": "string" },
+        "name": { "type": "string" },
+        "goal": { "type": "string" },
+        "productLink": { "type": "string" },
+        "budget": { "type": "string" },
+        "category": { "type": "string" },
+        "collabType": { "type": "string" },
+        "instructions": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "platform": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["brandId", "name", "goal", "productLink", "createdAt", "status"]
+    },
+    "Connection": {
+      "title": "Connection",
+      "description": "A connection request between a brand and a creator",
+      "type": "object",
+      "properties": {
+        "brandId": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["brandId", "creatorId", "status", "createdAt"]
+    },
+    "Space": {
+      "title": "Space",
+      "description": "An interactive space created by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "markers": { "type": "array" },
+        "order": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "username", "title", "imageUrl", "markers", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPrivate" },
+      "description": "Stores private user profiles and roles"
+    },
+    "/public_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Stores public user profiles"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Stores products"
+    },
+    "/interactions/{interactionId}": {
+      "schema": { "$ref": "#/entities/Interaction" },
+      "description": "Stores user interactions for analytics and trending"
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Stores campaign tasks"
+    },
+    "/campaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/Campaign" },
+      "description": "Stores campaigns"
+    },
+    "/connections/{connectionId}": {
+      "schema": { "$ref": "#/entities/Connection" },
+      "description": "Stores brand-creator connections"
+    },
+    "/spaces/{spaceId}": {
+      "schema": { "$ref": "#/entities/Space" },
+      "description": "Stores interactive spaces created by users"
+    }
+  }
+}

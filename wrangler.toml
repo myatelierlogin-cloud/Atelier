@@ -1,0 +1,21 @@
+name = "atelier"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "atelier-db"
+database_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "atelier-storage"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+preview_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+
+[vars]
+APP_URL = "http://localhost:8788"

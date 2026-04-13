@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Quicksand:wght@400;500;600;700&family=Anton&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  
+  --color-alabaster: #FAF9F6;
+  --color-charcoal: #1A1A1A;
+  --color-terracotta: #C15C3D;
+  --color-terracotta-dark: #A04A30;
+  --color-sage: #8A9A86;
+
+  /* Theme variables */
+  --color-theme-bg: var(--bg-color);
+  --color-theme-text: var(--text-color);
+  --color-theme-accent: var(--accent-color);
+  --color-theme-border: var(--border-color);
+  
+  --font-theme-heading: var(--font-heading);
+  --font-theme-body: var(--font-body);
+  
+  --radius-theme: var(--radius);
+  --border-theme-width: var(--border-width);
+}
+
+:root {
+  /* Default: Luxury */
+  --bg-color: #FAF9F6;
+  --text-color: #1A1A1A;
+  --accent-color: #1A1A1A;
+  --border-color: #1A1A1A;
+  --font-heading: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+  --radius: 0px;
+  --border-width: 1px;
+}
+
+[data-theme="luxury"] {
+  --bg-color: #FAF9F6;
+  --text-color: #1A1A1A;
+  --accent-color: #1A1A1A;
+  --border-color: #1A1A1A;
+  --font-heading: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+  --radius: 0px;
+  --border-width: 1px;
+}
+
+[data-theme="tech"] {
+  --bg-color: #0B0F19;
+  --text-color: #F3F4F6;
+  --accent-color: #3B82F6;
+  --border-color: #3B82F6;
+  --font-heading: "Space Mono", monospace;
+  --font-body: "Inter", sans-serif;
+  --radius: 6px;
+  --border-width: 1px;
+}
+
+[data-theme="creative"] {
+  --bg-color: #F4EFE6;
+  --text-color: #3E2723;
+  --accent-color: #E07A5F;
+  --border-color: #E07A5F;
+  --font-heading: "Quicksand", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --radius: 9999px;
+  --border-width: 1px;
+}
+
+[data-theme="fashion"] {
+  --bg-color: #FFFFFF;
+  --text-color: #000000;
+  --accent-color: #000000;
+  --border-color: #000000;
+  --font-heading: "Anton", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --radius: 0px;
+  --border-width: 3px;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="fashion"] body {
+  transition: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+[data-theme="fashion"] h1, 
+[data-theme="fashion"] h2, 
+[data-theme="fashion"] h3, 
+[data-theme="fashion"] h4, 
+[data-theme="fashion"] h5, 
+[data-theme="fashion"] h6 {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme specific hover effects for links/buttons */
+.theme-link {
+  border-radius: var(--radius);
+  border: var(--border-width) solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+[data-theme="luxury"] .theme-link:hover {
+  background-color: var(--accent-color);
+  color: var(--bg-color);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+[data-theme="tech"] .theme-link:hover {
+  box-shadow: 0 0 10px var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+[data-theme="creative"] .theme-link:hover {
+  background-color: var(--accent-color);
+  color: var(--bg-color);
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(224, 122, 95, 0.2);
+}
+
+[data-theme="fashion"] .theme-link {
+  transition: none;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  font-size: 1.125rem;
+}
+
+[data-theme="fashion"] .theme-link:hover {
+  background-color: var(--text-color);
+  color: var(--bg-color);
+}
+
+/* Social Icon specific hover */
+.theme-social {
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+[data-theme="luxury"] .theme-social:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+[data-theme="tech"] .theme-social:hover {
+  color: var(--accent-color);
+  filter: drop-shadow(0 0 8px var(--accent-color));
+}
+
+[data-theme="creative"] .theme-social:hover {
+  color: var(--accent-color);
+  transform: scale(1.15) rotate(5deg);
+}
+
+[data-theme="fashion"] .theme-social {
+  transition: none;
+}
+
+[data-theme="fashion"] .theme-social:hover {
+  background-color: var(--text-color);
+  color: var(--bg-color);
+}
+
+/* Moodboard Dot */
+.theme-dot {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+[data-theme="tech"] .theme-dot {
+  background-color: var(--accent-color);
+  border: none;
+  box-shadow: 0 0 8px var(--accent-color);
+}
+
+[data-theme="creative"] .theme-dot {
+  background-color: var(--accent-color);
+  border: none;
+}
+
+[data-theme="fashion"] .theme-dot {
+  background-color: var(--text-color);
+  border: 2px solid var(--bg-color);
+  border-radius: 0;
+  transition: none;
+}
+
+[data-theme="fashion"] .theme-dot:hover {
+  background-color: var(--bg-color);
+  border-color: var(--text-color);
+}
+
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.theme-accordion-hover {
+  transition: all 0.3s ease;
+}
+
+[data-theme="luxury"] .theme-accordion-hover:hover,
+[data-theme="creative"] .theme-accordion-hover:hover,
+[data-theme="fashion"] .theme-accordion-hover:hover,
+:root .theme-accordion-hover:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="tech"] .theme-accordion-hover:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.theme-tag-bg {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="tech"] .theme-tag-bg {
+  background-color: rgba(255, 255, 255, 0.1);
+}

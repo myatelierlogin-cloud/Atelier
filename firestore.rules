@@ -1,0 +1,341 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, 'shopper', 'creator', 'brand', 'admin')
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: public_profiles
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - role: string (required)
+    //   - bio: string (optional)
+    //   - niche: string (optional)
+    //   - avatarUrl: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: products
+    // Document ID: {productId}
+    // Fields:
+    //   - name: string (required)
+    //   - description: string (optional)
+    //   - price: number (required)
+    //   - imageUrl: string (optional)
+    //   - category: string (required)
+    //   - brandId: string (required)
+    //   - interactionsCount: number (required)
+    //   - purchasesCount: number (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: interactions
+    // Document ID: {interactionId}
+    // Fields:
+    //   - userId: string (required)
+    //   - targetId: string (required)
+    //   - type: string (required, 'view', 'click', 'purchase')
+    //   - timestamp: timestamp (required)
+    //
+    // Collection: tasks
+    // Document ID: {taskId}
+    // Fields:
+    //   - brandId: string (required)
+    //   - creatorId: string (required)
+    //   - campaignId: string (required)
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - deadline: timestamp (required)
+    //   - status: string (required, 'pending', 'submitted', 'approved', 'rejected')
+    //   - contentUrl: string (optional)
+    //   - scheduledDate: timestamp (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: campaigns
+    // Document ID: {campaignId}
+    // Fields:
+    //   - brandId: string (required)
+    //   - name: string (required)
+    //   - goal: string (required)
+    //   - productLink: string (required)
+    //   - budget: string (optional)
+    //   - category: string (optional)
+    //   - collabType: string (optional)
+    //   - instructions: string (optional)
+    //   - deadline: timestamp (optional)
+    //   - platform: string (optional)
+    //   - status: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: connections
+    // Document ID: {connectionId}
+    // Fields:
+    //   - brandId: string (required)
+    //   - creatorId: string (required)
+    //   - status: string (required, 'pending', 'accepted', 'declined')
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: spaces
+    // Document ID: {spaceId}
+    // Fields:
+    //   - userId: string (required)
+    //   - username: string (required)
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - imageUrl: string (required)
+    //   - isPublic: boolean (optional)
+    //   - markers: array (required)
+    //   - order: number (optional)
+    //   - updatedAt: string (required)
+    //   - createdAt: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        (('email' in request.auth.token && request.auth.token.email == "kristiss747@gmail.com") ||
+         ('email' in request.auth.token && request.auth.token.email != null && exists(/databases/$(database)/documents/admin_emails/$(request.auth.token.email))) ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+    
+    function isBrand() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'brand';
+    }
+    
+    function isCreator() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'creator';
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.get('uid', request.resource.data.uid);
+    }
+    
+    function isValidEmail(email) {
+      return email is string && (email == "" || email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"));
+    }
+    
+    function isValidUrl(url) {
+      return url is string && (url == "" || url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+    
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUserPrivate(data) {
+      return hasRequiredFields(['uid', 'email', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['shopper', 'creator', 'brand', 'admin', 'pending'] &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+    
+    function isValidPublicProfile(data) {
+      return hasRequiredFields(['uid', 'name', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.role in ['shopper', 'creator', 'brand', 'admin', 'pending'] &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is string) &&
+             (!('socialLinks' in data) || data.socialLinks is list) &&
+             (!('externalLinks' in data) || data.externalLinks is list) &&
+             (!('customSpaceOrder' in data) || data.customSpaceOrder is list) &&
+             isValidOptionalString('bio', 0, 5000) &&
+             isValidOptionalString('niche', 0, 100) &&
+             isValidOptionalString('avatarUrl', 0, 5000000) &&
+             isValidOptionalString('photoURL', 0, 5000000) &&
+             isValidOptionalString('displayName', 0, 200) &&
+             isValidOptionalString('theme', 0, 100) &&
+             isValidOptionalString('website', 0, 500) &&
+             isValidOptionalString('industry', 0, 100);
+    }
+    
+    function isValidProduct(data) {
+      return hasRequiredFields(['name', 'price', 'category', 'brandId', 'interactionsCount', 'purchasesCount', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+             data.brandId is string && data.brandId.size() > 0 &&
+             data.interactionsCount is number && data.interactionsCount >= 0 &&
+             data.purchasesCount is number && data.purchasesCount >= 0 &&
+             data.createdAt is timestamp &&
+             isValidOptionalString('description', 0, 2000) &&
+             isValidOptionalString('imageUrl', 0, 500);
+    }
+    
+    function isValidInteraction(data) {
+      return hasRequiredFields(['creatorId', 'type', 'timestamp']) &&
+             data.creatorId is string && data.creatorId.size() > 0 &&
+             data.type in ['view', 'click', 'purchase', 'profile_view', 'space_view', 'external_link_click', 'social_link_click', 'buy_button_click'] &&
+             data.timestamp is string &&
+             isValidOptionalString('spaceId', 0, 100) &&
+             isValidOptionalString('markerId', 0, 100) &&
+             isValidOptionalString('productTitle', 0, 200) &&
+             isValidOptionalString('platform', 0, 100) &&
+             isValidOptionalString('url', 0, 500) &&
+             isValidOptionalString('title', 0, 200);
+    }
+    
+    function isValidTask(data) {
+      return hasRequiredFields(['brandId', 'creatorId', 'campaignId', 'title', 'deadline', 'status', 'createdAt']) &&
+             data.brandId is string && data.brandId.size() > 0 &&
+             data.creatorId is string && data.creatorId.size() > 0 &&
+             data.campaignId is string && data.campaignId.size() > 0 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.deadline is timestamp &&
+             data.status in ['pending', 'submitted', 'approved', 'rejected'] &&
+             data.createdAt is timestamp &&
+             isValidOptionalString('description', 0, 2000) &&
+             isValidOptionalString('contentUrl', 0, 500) &&
+             (!('scheduledDate' in data) || data.scheduledDate is timestamp);
+    }
+    
+    function isValidCampaign(data) {
+      return hasRequiredFields(['brandId', 'name', 'goal', 'productLink', 'status', 'createdAt']) &&
+             data.brandId is string && data.brandId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.goal is string && data.goal.size() > 0 && data.goal.size() < 100 &&
+             data.productLink is string && data.productLink.size() > 0 && data.productLink.size() < 500 &&
+             data.status is string && data.status.size() > 0 && data.status.size() < 50 &&
+             data.createdAt is timestamp &&
+             isValidOptionalString('budget', 0, 100) &&
+             isValidOptionalString('category', 0, 100) &&
+             isValidOptionalString('collabType', 0, 100) &&
+             isValidOptionalString('instructions', 0, 5000) &&
+             isValidOptionalString('platform', 0, 100) &&
+             (!('deadline' in data) || data.deadline == null || data.deadline is timestamp);
+    }
+    
+    function isValidConnection(data) {
+      return hasRequiredFields(['brandId', 'creatorId', 'status', 'createdAt']) &&
+             data.brandId is string && data.brandId.size() > 0 &&
+             data.creatorId is string && data.creatorId.size() > 0 &&
+             data.status in ['pending', 'accepted', 'declined'] &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidSpace(data) {
+      return hasRequiredFields(['userId', 'username', 'title', 'imageUrl', 'markers', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.username is string && data.username.size() > 0 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.imageUrl is string && data.imageUrl.size() > 0 &&
+             data.markers is list &&
+             data.updatedAt is string &&
+             isValidOptionalString('description', 0, 2000) &&
+             (!('isPublic' in data) || data.isPublic is bool) &&
+             (!('order' in data) || data.order is number) &&
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('views' in data) || data.views is number) &&
+             (!('clicks' in data) || data.clicks is number);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /admin_emails/{email} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    match /public_profiles/{userId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (isBrand() || isAdmin()) && isValidProduct(request.resource.data) && (request.resource.data.brandId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidProduct(request.resource.data) && (resource.data.brandId == request.auth.uid || isAdmin()) && request.resource.data.brandId == resource.data.brandId;
+      allow delete: if isAuthenticated() && (resource.data.brandId == request.auth.uid || isAdmin());
+    }
+    
+    match /interactions/{interactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isValidInteraction(request.resource.data);
+      allow update: if false; // Interactions should be immutable
+      allow delete: if isAdmin();
+    }
+    
+    match /tasks/{taskId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.brandId == request.auth.uid || resource.data.creatorId == request.auth.uid));
+      allow create: if isAuthenticated() && (isBrand() || isAdmin()) && isValidTask(request.resource.data) && (request.resource.data.brandId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidTask(request.resource.data) && (resource.data.brandId == request.auth.uid || resource.data.creatorId == request.auth.uid || isAdmin()) && request.resource.data.brandId == resource.data.brandId && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.brandId == request.auth.uid);
+    }
+    
+    match /campaigns/{campaignId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.brandId == request.auth.uid);
+      allow create: if isAuthenticated() && (isBrand() || isAdmin()) && isValidCampaign(request.resource.data) && (request.resource.data.brandId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidCampaign(request.resource.data) && (resource.data.brandId == request.auth.uid || isAdmin()) && request.resource.data.brandId == resource.data.brandId;
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.brandId == request.auth.uid);
+    }
+    
+    match /connections/{connectionId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.brandId == request.auth.uid || resource.data.creatorId == request.auth.uid));
+      allow create: if isAuthenticated() && isValidConnection(request.resource.data) && (request.resource.data.brandId == request.auth.uid || request.resource.data.creatorId == request.auth.uid);
+      allow update: if isAuthenticated() && isValidConnection(request.resource.data) && (resource.data.brandId == request.auth.uid || resource.data.creatorId == request.auth.uid || isAdmin()) && request.resource.data.brandId == resource.data.brandId && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isAdmin() || (isAuthenticated() && (resource.data.brandId == request.auth.uid || resource.data.creatorId == request.auth.uid));
+    }
+    
+    match /spaces/{spaceId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidSpace(request.resource.data) && request.resource.data.userId == request.auth.uid;
+      allow update: if (isAuthenticated() && isValidSpace(request.resource.data) && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId) ||
+                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'clicks']) &&
+                        (request.resource.data.views == (('views' in resource.data) ? resource.data.views : 0) + 1 || request.resource.data.views == (('views' in resource.data) ? resource.data.views : 0)) &&
+                        (request.resource.data.clicks == (('clicks' in resource.data) ? resource.data.clicks : 0) + 1 || request.resource.data.clicks == (('clicks' in resource.data) ? resource.data.clicks : 0)));
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

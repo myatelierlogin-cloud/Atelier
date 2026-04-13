@@ -1,0 +1,5 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="16" r="16" fill="#C15C3D"/>
+  <circle cx="16" cy="16" r="5" fill="#F5F5F0"/>
+  <text x="40" y="22" font-family="serif" font-size="20" font-weight="500" fill="#141414" letter-spacing="-0.02em">Atelier</text>
+</svg>
